@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escala de Saúde Alimentar 0–500</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 0.3rem;
+  }
+  .subtitle {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 2rem;
+  }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .filter-btn {
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #334155;
+    background: transparent;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.15s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-color: #475569;
+  }
+
+  .search-wrap {
+    margin-bottom: 1.5rem;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    outline: none;
+  }
+  input[type="text"]::placeholder { color: #475569; }
+
+  .tier-block { margin-bottom: 2.5rem; }
+  .tier-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #1e293b;
+  }
+  .tier-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .tier-title { font-size: 1rem; font-weight: 600; }
+  .tier-range { font-size: 0.75rem; color: #475569; margin-left: auto; }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 0.75rem;
+  }
+  .card {
+    background: #1a1f2e;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    transition: border-color 0.15s;
+    cursor: default;
+  }
+  .card:hover { border-color: #334155; }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.4rem;
+  }
+  .card-name { font-size: 0.9rem; font-weight: 600; color: #f1f5f9; }
+  .score-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .card-cat {
+    font-size: 0.7rem;
+    color: #475569;
+    margin-bottom: 0.5rem;
+  }
+  .card-benefits {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    line-height: 1.4;
+  }
+  .bar-wrap {
+    margin-top: 0.6rem;
+    background: #0f1117;
+    border-radius: 999px;
+    height: 4px;
+    overflow: hidden;
+  }
+  .bar { height: 100%; border-radius: 999px; }
+
+  .hidden { display: none; }
+
+  /* Tier colors */
+  .t5 { --color: #22c55e; --bg: #052e16; }
+  .t4 { --color: #84cc16; --bg: #1a2e05; }
+  .t3 { --color: #eab308; --bg: #2d1f02; }
+  .t2 { --color: #f97316; --bg: #2d1000; }
+  .t1 { --color: #ef4444; --bg: #2d0606; }
+
+  .tier-badge, .score-badge { background: var(--bg); color: var(--color); }
+  .tier-title { color: var(--color); }
+  .bar { background: var(--color); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🥦 Escala de Saúde Alimentar</h1>
+  <p class="subtitle">0 a 500 pontos · Baseada em densidade nutricional, evidência científica e impacto em prevenção de doenças</p>
+
+  <div class="search-wrap">
+    <input type="text" id="search" placeholder="Pesquisar alimento..." oninput="filterCards()">
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="filterCat('all', this)">Todos</button>
+    <button class="filter-btn" onclick="filterCat('vegetal', this)">🥬 Vegetais</button>
+    <button class="filter-btn" onclick="filterCat('fruta', this)">🍓 Frutas</button>
+    <button class="filter-btn" onclick="filterCat('proteína', this)">🥚 Proteínas</button>
+    <button class="filter-btn" onclick="filterCat('gordura', this)">🫒 Gorduras</button>
+    <button class="filter-btn" onclick="filterCat('leguminosa', this)">🫘 Leguminosas</button>
+    <button class="filter-btn" onclick="filterCat('especiaria', this)">🌿 Especiarias</button>
+    <button class="filter-btn" onclick="filterCat('fermentado', this)">🧫 Fermentados</button>
+    <button class="filter-btn" onclick="filterCat('outro', this)">Outros</button>
+  </div>
+
+  <div id="tiers-container"></div>
+</div>
+
+<script>
+const data = [
+  // TIER 5 — Elite (400–500)
+  { name: "Couve Kale", score: 490, cat: "vegetal", benefits: "Anti-inflamatório, vitamina K, C, A, luteína, suporte ósseo e imune" },
+  { name: "Espinafres", score: 480, cat: "vegetal", benefits: "Ferro, folato, magnésio, antioxidantes, saúde cardiovascular" },
+  { name: "Mirtilos", score: 475, cat: "fruta", benefits: "Antocianinas, neuroproteção, reduz LDL, anti-envelhecimento" },
+  { name: "Salmão selvagem", score: 470, cat: "proteína", benefits: "Omega-3 EPA/DHA, proteína completa, vitamina D, anti-inflamatório" },
+  { name: "Alho", score: 465, cat: "especiaria", benefits: "Alicina antibacteriana, reduz pressão arterial, imunoestimulante" },
+  { name: "Brócolos", score: 460, cat: "vegetal", benefits: "Sulforafano anticancerígeno, fibra, vitamina C, detox hepático" },
+  { name: "Cúrcuma", score: 455, cat: "especiaria", benefits: "Curcumina anti-inflamatória, neuroproteção, suporte imune" },
+  { name: "Ovos inteiros", score: 450, cat: "proteína", benefits: "Proteína completa, colina cerebral, vitamina D, luteína" },
+  { name: "Azeite extra virgem", score: 448, cat: "gordura", benefits: "Oleocantal anti-inflamatório, oleico, polifenóis, cardioprotetor" },
+  { name: "Sardinha", score: 445, cat: "proteína", benefits: "Omega-3, vitamina D, cálcio, B12, proteína completa" },
+  { name: "Fígado de vaca", score: 442, cat: "proteína", benefits: "Vitamina A, B12, ferro heme, folato, cobre — superfood real" },
+  { name: "Agrião", score: 440, cat: "vegetal", benefits: "PRAL negativo, isotiocianatos, antioxidante, vitamina K" },
+  { name: "Algas (nori/wakame)", score: 435, cat: "vegetal", benefits: "Iodo, minerais marinhos, fucoidanos imuno-moduladores" },
+  { name: "Nozes", score: 430, cat: "gordura", benefits: "ALA omega-3, polifenóis, reduz LDL, saúde cerebral" },
+  { name: "Romã", score: 425, cat: "fruta", benefits: "Punicalaginas, punicalagin → urolitinas, anti-inflamatório, cardio" },
+  { name: "Chouriço verde / coentros", score: 420, cat: "especiaria", benefits: "Quelante de metais pesados, vitamina K, anti-inflamatório" },
+  { name: "Gengibre", score: 418, cat: "especiaria", benefits: "Gingerol, anti-náusea, anti-inflamatório, digestivo" },
+  { name: "Cogumelos Shiitake", score: 415, cat: "vegetal", benefits: "Lentinano, beta-glucanos imunes, vitamina D (exposto ao sol)" },
+  { name: "Feijão preto", score: 410, cat: "leguminosa", benefits: "Fibra solúvel, antocianinas, proteína, índice glicémico baixo" },
+  { name: "Semente de linhaça", score: 408, cat: "gordura", benefits: "ALA, lignanas anticancerígenas, fibra solúvel, omega-3 vegetal" },
+  { name: "Framboesas", score: 405, cat: "fruta", benefits: "Ácido elágico, fibra, antioxidantes, baixo IG" },
+  { name: "Batata-doce", score: 402, cat: "vegetal", benefits: "Beta-caroteno, potássio, fibra, vitamina B6, anti-inflamatório" },
+
+  // TIER 4 — Excelente (300–399)
+  { name: "Lentilhas", score: 390, cat: "leguminosa", benefits: "Proteína vegetal, folato, ferro, fibra, prebiótico" },
+  { name: "Chia", score: 385, cat: "gordura", benefits: "Omega-3, fibra, cálcio, manganês, controlo glicémico" },
+  { name: "Abacate", score: 380, cat: "gordura", benefits: "Gordura monoinsaturada, potássio, folato, luteína" },
+  { name: "Maça (com casca)", score: 375, cat: "fruta", benefits: "Quercetina, pectina, microbiota, anti-inflamatório suave" },
+  { name: "Grão-de-bico", score: 370, cat: "leguminosa", benefits: "Fibra, proteína, manganês, índice glicémico moderado" },
+  { name: "Iogurte natural (gordura total)", score: 368, cat: "fermentado", benefits: "Probióticos, cálcio, proteína, microbiota intestinal" },
+  { name: "Cebola roxa", score: 365, cat: "vegetal", benefits: "Quercetina, fibra prebiótica, anti-inflamatório" },
+  { name: "Arando (cranberry)", score: 360, cat: "fruta", benefits: "Proantocianidinas, saúde urinária, anti-adesão bacteriana" },
+  { name: "Castanha do Pará (1–2/dia)", score: 355, cat: "gordura", benefits: "Selénio (antioxidante), tiróide, imunidade" },
+  { name: "Tomate (cozinhado)", score: 350, cat: "vegetal", benefits: "Licopeno biodisponível, vitamina C, potássio, antioxidante" },
+  { name: "Chá verde (matcha)", score: 348, cat: "outro", benefits: "EGCG, L-teanina, neuroproteção, metabolismo" },
+  { name: "Pepitas de abóbora", score: 345, cat: "gordura", benefits: "Zinco, magnésio, triptofano, ácidos gordos saudáveis" },
+  { name: "Espargos", score: 342, cat: "vegetal", benefits: "Inulina prebiótica, folato, anti-inflamatório, vitamina K" },
+  { name: "Amêndoas", score: 340, cat: "gordura", benefits: "Vitamina E, magnésio, fibra, reduz LDL, anti-inflamatório" },
+  { name: "Couve-flor", score: 335, cat: "vegetal", benefits: "Glucosinolatos, vitamina C, colina, fibra" },
+  { name: "Bacalhau", score: 330, cat: "proteína", benefits: "Proteína magra, iodo, fósforo, vitamina B12" },
+  { name: "Açafrão-da-terra (saffron)", score: 328, cat: "especiaria", benefits: "Crocina antidepressiva, anti-inflamatório, anti-ansiedade" },
+  { name: "Couve de Bruxelas", score: 325, cat: "vegetal", benefits: "Sulforafano, vitamina K, C, fibra, detox" },
+  { name: "Kimchi", score: 320, cat: "fermentado", benefits: "Probióticos Lactobacillus, vitaminas, fibra, metabolismo" },
+  { name: "Alho-francês", score: 315, cat: "vegetal", benefits: "Kaempferol, prebiótico, vitamina K, folato" },
+  { name: "Maçaroca (milho inteiro)", score: 310, cat: "vegetal", benefits: "Luteína, zeaxantina, fibra, vitamina B, antioxidante" },
+  { name: "Manga", score: 305, cat: "fruta", benefits: "Beta-caroteno, vitamina C, mangiferina anti-inflamatória" },
+  { name: "Kefir", score: 302, cat: "fermentado", benefits: "30+ estirpes probióticas, vitamina K2, imunidade intestinal" },
+
+  // TIER 3 — Bom (200–299)
+  { name: "Frango (peito, grão livre)", score: 295, cat: "proteína", benefits: "Proteína magra, selénio, B6, niacina" },
+  { name: "Cenoura", score: 285, cat: "vegetal", benefits: "Beta-caroteno, fibra, vitamina K, antioxidante" },
+  { name: "Laranja", score: 280, cat: "fruta", benefits: "Vitamina C, hesperidina, folato, imunidade" },
+  { name: "Quinoa", score: 275, cat: "outro", benefits: "Proteína completa, magnésio, fibra, sem glúten" },
+  { name: "Pepino", score: 265, cat: "vegetal", benefits: "Hidratação, silício, vitamina K, anti-inflamatório ligeiro" },
+  { name: "Feijão verde", score: 260, cat: "vegetal", benefits: "Fibra, vitamina K, C, manganês, prebiótico" },
+  { name: "Uvas escuras", score: 258, cat: "fruta", benefits: "Resveratrol, quercetina, saúde cardiovascular" },
+  { name: "Arroz integral", score: 255, cat: "outro", benefits: "Fibra, magnésio, B1, B3, manganês, saciante" },
+  { name: "Alho-porro", score: 250, cat: "vegetal", benefits: "Prebiótico inulina, vitamina K, folato" },
+  { name: "Ameixa seca", score: 248, cat: "fruta", benefits: "Sorbitol, boro (ossos), antioxidantes, digestivo" },
+  { name: "Pera", score: 245, cat: "fruta", benefits: "Fibra solúvel, vitamina C, quercetina, hidratação" },
+  { name: "Aipo", score: 242, cat: "vegetal", benefits: "Apigenina, anti-inflamatório, vitamina K, digestivo" },
+  { name: "Coentros frescos", score: 240, cat: "especiaria", benefits: "Quelante de metais pesados, vitamina K, anti-inflamatório" },
+  { name: "Cacau puro (>85%)", score: 235, cat: "outro", benefits: "Flavanóis, magnésio, anti-inflamatório, dopamina" },
+  { name: "Água de coco natural", score: 225, cat: "outro", benefits: "Electrólitos, potássio, cítocinas anti-inflamatórias" },
+  { name: "Sementes de sésamo", score: 220, cat: "gordura", benefits: "Cálcio, zinco, sesamina antioxidante, lignanas" },
+  { name: "Ervilhas", score: 215, cat: "leguminosa", benefits: "Proteína vegetal, vitamina K, C, fibra, tiamina" },
+  { name: "Mirtilo selvagem", score: 210, cat: "fruta", benefits: "Mais polifenóis que mirtilo normal, neuroproteção" },
+  { name: "Tâmaras (com moderação)", score: 205, cat: "fruta", benefits: "Fibra, potássio, ferro, antioxidantes — mas denso em açúcar" },
+
+  // TIER 2 — Razoável (100–199)
+  { name: "Massa integral", score: 195, cat: "outro", benefits: "Fibra, vitaminas B, saciante, melhor que massa branca" },
+  { name: "Batata (cozida e arrefecida)", score: 185, cat: "vegetal", benefits: "Amido resistente pré-biótico, potássio, vitamina C" },
+  { name: "Pão de centeio (fermentado)", score: 180, cat: "outro", benefits: "Fibra, IG baixo, prebiótico, vitaminas B" },
+  { name: "Atum em lata (água)", score: 175, cat: "proteína", benefits: "Proteína, B12, niacina — mas cuidado com mercúrio" },
+  { name: "Leite inteiro", score: 165, cat: "proteína", benefits: "Cálcio, vitamina D, proteína — qualidade depende da fonte" },
+  { name: "Queijo curado (moderado)", score: 160, cat: "fermentado", benefits: "Vitamina K2, cálcio, proteína, probióticos ligeiros" },
+  { name: "Mel cru (1 col. chá)", score: 155, cat: "outro", benefits: "Antimicrobiano, prebiótico ligeiro, antioxidantes florais" },
+  { name: "Manga seca (sem açúcar)", score: 150, cat: "fruta", benefits: "Beta-caroteno, vitamina C, fibra — mas denso calórico" },
+  { name: "Trigo sarraceno", score: 145, cat: "outro", benefits: "Rutina flavonoide, sem glúten, magnésio, fibra" },
+  { name: "Carne de vaca magra (pasto)", score: 140, cat: "proteína", benefits: "Ferro heme, zinco, B12, creatina — moderação" },
+  { name: "Abóbora", score: 135, cat: "vegetal", benefits: "Beta-caroteno, vitamina C, fibra, potássio" },
+  { name: "Alface romana", score: 130, cat: "vegetal", benefits: "Vitamina K, A, C, folato, hidratação, baixíssimo calórico" },
+  { name: "Chuchu", score: 120, cat: "vegetal", benefits: "Vitamina C, folato, fibra, muito pouco calórico" },
+
+  // TIER 1 — Fraco / Neutro (0–99)
+  { name: "Pão branco", score: 85, cat: "outro", benefits: "Pouca fibra, IG alto — melhor substituir" },
+  { name: "Arroz branco", score: 80, cat: "outro", benefits: "Amido simples, pouca nutrição — ok com contexto" },
+  { name: "Sumo de laranja embalado", score: 70, cat: "fruta", benefits: "Vitamina C mas sem fibra, açúcar rápido" },
+  { name: "Iogurte com açúcar", score: 60, cat: "fermentado", benefits: "Probióticos diluídos por açúcar adicionado" },
+  { name: "Queijo processado", score: 50, cat: "proteína", benefits: "Cálcio presente mas aditivos elevados, qualidade baixa" },
+  { name: "Bolacha de água e sal", score: 40, cat: "outro", benefits: "Amido refinado, pouco nutriente, sem fibra real" },
+  { name: "Refrigerante diet", score: 20, cat: "outro", benefits: "Zero calorias mas adoçantes perturbam microbiota" },
+  { name: "Batata frita embalada", score: 15, cat: "outro", benefits: "Acrilamida, sal, óleos oxidados, nutrição mínima" },
+  { name: "Donut / bolacha industrial", score: 10, cat: "outro", benefits: "Gordura trans, açúcar, farinha branca — pro-inflamatório" },
+  { name: "Refrigerante com açúcar", score: 5, cat: "outro", benefits: "Açúcar líquido sem fibra, disbiose intestinal, pró-inflamatório" },
+];
+
+const tiers = [
+  { id: "t5", label: "Elite", range: "400–500", min: 400, max: 500 },
+  { id: "t4", label: "Excelente", range: "300–399", min: 300, max: 399 },
+  { id: "t3", label: "Bom", range: "200–299", min: 200, max: 299 },
+  { id: "t2", label: "Razoável", range: "100–199", min: 100, max: 199 },
+  { id: "t1", label: "Fraco", range: "0–99", min: 0, max: 99 },
+];
+
+let currentCat = 'all';
+
+function renderTiers() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const container = document.getElementById('tiers-container');
+  container.innerHTML = '';
+
+  tiers.forEach(tier => {
+    const items = data
+      .filter(d => d.score >= tier.min && d.score <= tier.max)
+      .filter(d => currentCat === 'all' || d.cat === currentCat)
+      .filter(d => d.name.toLowerCase().includes(search) || d.benefits.toLowerCase().includes(search))
+      .sort((a, b) => b.score - a.score);
+
+    if (items.length === 0) return;
+
+    const block = document.createElement('div');
+    block.className = `tier-block ${tier.id}`;
+    block.innerHTML = `
+      <div class="tier-header">
+        <span class="tier-badge">${tier.id.replace('t','T')}</span>
+        <span class="tier-title">${tier.label}</span>
+        <span class="tier-range">${tier.range} pts · ${items.length} alimentos</span>
+      </div>
+      <div class="cards">
+        ${items.map(item => `
+          <div class="card ${tier.id}">
+            <div class="card-top">
+              <span class="card-name">${item.name}</span>
+              <span class="score-badge">${item.score}</span>
+            </div>
+            <div class="card-cat">${catLabel(item.cat)}</div>
+            <div class="card-benefits">${item.benefits}</div>
+            <div class="bar-wrap"><div class="bar" style="width:${(item.score/500*100).toFixed(1)}%"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(block);
+  });
+}
+
+function catLabel(cat) {
+  const map = { vegetal:'🥬 Vegetal', fruta:'🍓 Fruta', proteína:'🥚 Proteína', gordura:'🫒 Gordura', leguminosa:'🫘 Leguminosa', especiaria:'🌿 Especiaria', fermentado:'🧫 Fermentado', outro:'⚙️ Outro' };
+  return map[cat] || cat;
+}
+
+function filterCat(cat, btn) {
+  currentCat = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTiers();
+}
+
+function filterCards() { renderTiers(); }
+
+renderTiers();
+</script>
+</body>
+</html>
